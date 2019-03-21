@@ -1,0 +1,6 @@
+[submodule "libccdav"]
+	path = libccdav
+	url = git@github.com:mauikit/libccdav.git
+[submodule "openssl"]
+	path = openssl
+	url = git@github.com:mauikit/openssl.git

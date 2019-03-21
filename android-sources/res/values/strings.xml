@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Accounts</string>
+    <string name="label_mauikit_account_authenticator">CardDAV Account</string>
+    <string name="account_type">org.mauikit.accounts</string>
+    <string name="authorities">org.mauikit.accounts.syncadapter.provider</string>
+    <string name="contact_item_ctag_mimetype">vnd.android.cursor.item/org.mauikit.accounts.contact_item_ctag</string>
+</resources>
