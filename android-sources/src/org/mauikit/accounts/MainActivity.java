@@ -137,12 +137,11 @@ public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity 
     return Utils.serializeContacts(m_instance.getApplicationContext(), m_instance.getResources().getString(R.string.account_type));
   }
 
-  private static Uri addCallerIsSyncAdapterParameter(Uri uri, boolean isSyncOperation) {
-    if (isSyncOperation) {
-      return uri.buildUpon()
-              .appendQueryParameter(ContactsContract.CALLER_IS_SYNCADAPTER, "true")
-              .build();
-    }
-    return uri;
+  public static String[][] getDeletedContacts() {
+    return Utils.getDeletedContacts(m_instance.getApplicationContext(), m_instance.getResources().getString(R.string.account_type));
+  }
+
+  public static void syncContacts(String ops[][]) {
+    Utils.syncContacts(ops, m_instance.getApplicationContext(), m_instance.getResources().getString(R.string.account_type));
   }
 }
