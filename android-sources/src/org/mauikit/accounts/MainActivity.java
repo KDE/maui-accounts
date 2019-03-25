@@ -82,10 +82,10 @@ public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity 
             (AccountManager) m_instance.getSystemService(
                     ACCOUNT_SERVICE);
 
-    ContentResolver.setSyncAutomatically(newAccount, AUTHORITY, true);
+    ContentResolver.setSyncAutomatically(newAccount, ContactsContract.AUTHORITY, true);
 
     // Set this account periodically sync with the specified interval
-    ContentResolver.addPeriodicSync(newAccount, AUTHORITY, Bundle.EMPTY, 21600);
+    ContentResolver.addPeriodicSync(newAccount, ContactsContract.AUTHORITY, Bundle.EMPTY, 21600);
 
     Bundle bundle = new Bundle();
     bundle.putString(Constants.ACCOUNT_USERDATA_ACCOUNTNAME, accountName);
