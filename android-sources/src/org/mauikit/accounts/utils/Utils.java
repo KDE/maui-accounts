@@ -391,9 +391,17 @@ public class Utils {
       // DATA: NAME
       ContentProviderOperation.Builder nameBuilder = ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
               .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
-              .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
-              .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, card.getStructuredName().getGiven())
-              .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, card.getStructuredName().getFamily());
+              .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
+
+      if (card.getStructuredName() != null) {
+          nameBuilder
+            .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, card.getStructuredName().getGiven())
+            .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, card.getStructuredName().getFamily());
+      }
+      if (card.getFormattedName() != null) {
+          nameBuilder
+            .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, card.getFormattedName().getValue());
+      }
 
     //          if (!card.getStructuredName().getPrefixes().isEmpty()) {
     //            nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.PREFIX, card.getStructuredName().getPrefixes().get(0));
