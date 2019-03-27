@@ -3,7 +3,6 @@
         <file>main.qml</file>
         <file>ToastManager.qml</file>
         <file>Toast.qml</file>
-        <file>icons/delete.svg</file>
         <file>icons/delete.png</file>
         <file>icons/refresh.png</file>
         <file>ProgressDialog.qml</file>

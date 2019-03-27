@@ -13,9 +13,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.os.Environment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.io.File;
 
 import org.mauikit.accounts.utils.Constants;
 import org.mauikit.accounts.utils.Utils;
@@ -32,39 +34,11 @@ public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity 
     Log.d(TAG, "in init()");
     int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 0;
 
+
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-        m_instance.requestPermissions(new String[]{android.Manifest.permission.GET_ACCOUNTS, android.Manifest.permission.READ_CONTACTS},
+        m_instance.requestPermissions(new String[]{android.Manifest.permission.GET_ACCOUNTS, android.Manifest.permission.READ_CONTACTS, android.Manifest.permission.WRITE_EXTERNAL_STORAGE},
                 MY_PERMISSIONS_REQUEST_READ_CONTACTS);
     }
-
-//    ContentValues values = new ContentValues();
-//    values.put(ContactsContract.RawContacts.ACCOUNT_TYPE, m_instance.getResources().getString(R.string.account_type));
-//    values.put(ContactsContract.RawContacts.ACCOUNT_NAME, m_instance.getResources().getString(R.string.account_type));
-//    Uri rawContactUri = m_instance.getContentResolver().insert(ContactsContract.RawContacts.CONTENT_URI, values);
-//    long rawContactId = ContentUris.parseId(rawContactUri);
-
-//    values.clear();
-//    values.put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
-//    values.put(ContactsContract.Data.MIMETYPE, m_instance.getResources().getString(R.string.contact_item_ctag_mimetype));
-//    values.put(ContactsContract.Contacts.Data.DATA1, "1234abcd");
-//    m_instance.getContentResolver().insert(ContactsContract.Data.CONTENT_URI, values);
-
-
-//    ContentResolver resolver = m_instance.getContentResolver();
-//    ArrayList<ContentProviderOperation> ops = new ArrayList<ContentProviderOperation>();
-//    ops.add(ContentProviderOperation.newInsert(m_instance.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, false))
-//            .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, m_instance.getResources().getString(R.string.account_type))
-//            .withValue(ContactsContract.Data.MIMETYPE, m_instance.getResources().getString(R.string.contact_item_ctag_mimetype))
-//            .withValue(ContactsContract.Contacts.Data.DATA1, "1234abcd")
-//            .withValue("raw_contact_id", 9681)
-//            .build());
-
-//    try {
-//      resolver.applyBatch(ContactsContract.AUTHORITY, ops);
-//    }
-//    catch (Exception e) {
-//      e.printStackTrace();
-//    }
   }
 
   /**

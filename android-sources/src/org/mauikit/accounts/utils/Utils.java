@@ -1,48 +1,33 @@
 package org.mauikit.accounts.utils;
 
-import org.mauikit.accounts.R;
-
+import android.content.ContentProviderOperation;
+import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
-import android.util.Log;
-import android.database.DatabaseUtils;
-import android.content.ContentUris;
 import android.util.Base64;
-import android.content.ContentProviderOperation;
-import android.content.ContentValues;
+import android.util.Log;
 
-import java.io.FileInputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.lang.Exception;
+import org.mauikit.accounts.R;
+
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import ezvcard.Ezvcard;
 import ezvcard.VCard;
 import ezvcard.VCardVersion;
-import ezvcard.parameter.TelephoneType;
+import ezvcard.parameter.ImageType;
 import ezvcard.property.Address;
 import ezvcard.property.Email;
-import ezvcard.property.Nickname;
-import ezvcard.property.Organization;
+import ezvcard.property.Photo;
 import ezvcard.property.StructuredName;
 import ezvcard.property.Telephone;
 import ezvcard.property.Url;
 
 public class Utils {
   private static final String TAG = "Utils";
-
-  public static SharedPreferences getDefaultSharedPreferences(
-          Context context) {
-    return context.getSharedPreferences(
-            context.getPackageName() + "_preferences",
-            Context.MODE_PRIVATE);
-  }
 
   public static String[][] serializeContacts(Context ctx, String accountType) {
     List<String[]> serializedData = new ArrayList<>();
@@ -71,14 +56,23 @@ public class Utils {
 
       if (commonDataCursor.getCount() > 0) {
         StructuredName name = new StructuredName();
+        String prefix = commonDataCursor.getString(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.PREFIX));
+        String suffix = commonDataCursor.getString(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.SUFFIX));
         String givenName = commonDataCursor.getString(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME));
         String familyName = commonDataCursor.getString(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME));
         String fullName = "";
 
         name.setGiven(givenName);
         name.setFamily(familyName);
-//        name.getPrefixes().add(commonDataCursor.getString(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.PREFIX)));
-//        name.getSuffixes().add(commonDataCursor.getString(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.SUFFIX)));
+
+        if (prefix != null) {
+          name.getPrefixes().add(prefix);
+        }
+
+        if (suffix != null) {
+          name.getSuffixes().add(suffix);
+        }
+
 
         if (givenName != null) {
           fullName = givenName;
@@ -92,36 +86,52 @@ public class Utils {
       }
 
       // DATA: PHONE
-      // TODO: Include Type in vCard
       DATA_SELECTION_ARGS[1] = ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE;
       PROJECTION = new String[]{ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.CommonDataKinds.Phone.TYPE};
       commonDataCursor = ctx.getContentResolver().query(ContactsContract.Data.CONTENT_URI, PROJECTION, DATA_SELECTION, DATA_SELECTION_ARGS, null);
       commonDataCursor.moveToFirst();
 
       while (!commonDataCursor.isAfterLast()) {
-        Telephone tel = new Telephone(commonDataCursor.getString(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)));
-        //        ContactsContract.CommonDataKinds.Phone.getTypeLabel(ctx.getResources(), commonDataCursor.getInt(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.TYPE)), "").toString()
-        //        tel.getTypes().add();
+        String number = commonDataCursor.getString(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+        int type = commonDataCursor.getInt(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.TYPE));
+
+        Telephone tel = new Telephone(number);
+        tel.addParameter(Constants.VCARD_FIELD_TYPE, String.valueOf(type));
 
         vCard.addTelephoneNumber(tel);
         commonDataCursor.moveToNext();
       }
 
       // DATA: EMAIL
-      // TODO: Include Type in vCard
       DATA_SELECTION_ARGS[1] = ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE;
-      PROJECTION = new String[]{ContactsContract.CommonDataKinds.Email.ADDRESS};
+      PROJECTION = new String[]{ContactsContract.CommonDataKinds.Email.ADDRESS, ContactsContract.CommonDataKinds.Email.TYPE};
       commonDataCursor = ctx.getContentResolver().query(ContactsContract.Data.CONTENT_URI, PROJECTION, DATA_SELECTION, DATA_SELECTION_ARGS, null);
       commonDataCursor.moveToFirst();
 
       while (!commonDataCursor.isAfterLast()) {
+        int type = commonDataCursor.getInt(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Email.TYPE));
+
         Email email = new Email(commonDataCursor.getString(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Email.ADDRESS)));
+        email.addParameter(Constants.VCARD_FIELD_TYPE, String.valueOf(type));
         vCard.addEmail(email);
+
         commonDataCursor.moveToNext();
       }
 
       // DATA: PHOTO
-      // TODO
+      DATA_SELECTION_ARGS[1] = ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE;
+      PROJECTION = new String[]{ContactsContract.CommonDataKinds.Photo.PHOTO};
+      commonDataCursor = ctx.getContentResolver().query(ContactsContract.Data.CONTENT_URI, PROJECTION, DATA_SELECTION, DATA_SELECTION_ARGS, null);
+      commonDataCursor.moveToFirst();
+
+      if (commonDataCursor.getCount() > 0) {
+        byte rawImageData[] = commonDataCursor.getBlob(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
+
+        if (rawImageData != null && rawImageData.length > 0) {
+          Photo photo = new Photo(rawImageData, ImageType.PNG);
+          vCard.addPhoto(photo);
+        }
+      }
 
       // DATA: ORGANIZATION
       DATA_SELECTION_ARGS[1] = ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE;
@@ -136,11 +146,7 @@ public class Utils {
         );
       }
 
-      // DATA: IM
-      // TODO
-
       // DATA: NICKNAME
-      // TODO: Include Type in vCard
       DATA_SELECTION_ARGS[1] = ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE;
       PROJECTION = new String[]{ContactsContract.CommonDataKinds.Nickname.NAME};
       commonDataCursor = ctx.getContentResolver().query(ContactsContract.Data.CONTENT_URI, PROJECTION, DATA_SELECTION, DATA_SELECTION_ARGS, null);
@@ -160,26 +166,24 @@ public class Utils {
         vCard.addNote(commonDataCursor.getString(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Note.NOTE)));
       }
 
-      // DATA: GROUP_MEMBERSHIP
-      // TODO
-
       // DATA: POSTAL
-      // TODO: Include Type in vCard
       DATA_SELECTION_ARGS[1] = ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE;
-      PROJECTION = new String[]{ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS};
+      PROJECTION = new String[]{ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS, ContactsContract.CommonDataKinds.StructuredPostal.TYPE};
       commonDataCursor = ctx.getContentResolver().query(ContactsContract.Data.CONTENT_URI, PROJECTION, DATA_SELECTION, DATA_SELECTION_ARGS, null);
       commonDataCursor.moveToFirst();
 
       while (!commonDataCursor.isAfterLast()) {
+        int type = commonDataCursor.getInt(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.TYPE));
+
         Address addr = new Address();
         addr.setLabel(commonDataCursor.getString(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS)));
+        addr.setParameter(Constants.VCARD_FIELD_TYPE, String.valueOf(type));
 
         vCard.addAddress(addr);
         commonDataCursor.moveToNext();
       }
 
       // DATA: WEBSITE
-      // TODO: Include Type in vCard
       DATA_SELECTION_ARGS[1] = ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE;
       PROJECTION = new String[]{ContactsContract.CommonDataKinds.Website.URL};
       commonDataCursor = ctx.getContentResolver().query(ContactsContract.Data.CONTENT_URI, PROJECTION, DATA_SELECTION, DATA_SELECTION_ARGS, null);
@@ -189,15 +193,6 @@ public class Utils {
         vCard.addUrl(commonDataCursor.getString(commonDataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Website.URL)));
         commonDataCursor.moveToNext();
       }
-
-      // DATA: EVENT
-      // TODO
-
-      // DATA: RELATIONSHIP
-      // TODO
-
-      // DATA: SIP_ADDRESS
-      // TODO
 
       // Data: CTAG
       DATA_SELECTION_ARGS[1] = ctx.getResources().getString(R.string.contact_item_ctag_mimetype);
@@ -278,14 +273,12 @@ public class Utils {
         case Constants.SYNC_OPERATION_INSERT_URL_CTAG: {
           Log.d(TAG, "syncContacts: SYNC_OPERATION_INSERT_URL_CTAG : " + cTag + ", " + url);
 
-          //            DATA_SELECTION_ARGS[1] = ctx.getResources().getString(R.string.contact_item_ctag_mimetype);
           ContentValues values = new ContentValues();
           values.put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
           values.put(ContactsContract.Data.MIMETYPE, ctx.getResources().getString(R.string.contact_item_ctag_mimetype));
           values.put(ContactsContract.Data.DATA1, cTag);
           ctx.getContentResolver().insert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true), values);//, DATA_SELECTION, DATA_SELECTION_ARGS);
 
-          //            DATA_SELECTION_ARGS[1] = ctx.getResources().getString(R.string.contact_item_url_mimetype);
           values.clear();
           values.put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
           values.put(ContactsContract.Data.MIMETYPE, ctx.getResources().getString(R.string.contact_item_url_mimetype));
@@ -377,142 +370,136 @@ public class Utils {
   }
 
   private static void insertContact(Context ctx, String accountType, String vCard, String url, String cTag) {
-      VCard card = Ezvcard.parse(vCard).first();
-      ArrayList<ContentProviderOperation> insertOps =
-              new ArrayList<ContentProviderOperation>();
+    VCard card = Ezvcard.parse(vCard).first();
+    ArrayList<ContentProviderOperation> insertOps =
+            new ArrayList<>();
 
-      int rawContactInsertIndex = insertOps.size();
-      insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.RawContacts.CONTENT_URI, true))
-              .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, accountType)
-              .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, accountType)
-              .withValue(ContactsContract.RawContacts.SYNC1, url)
-              .build());
+    int rawContactInsertIndex = insertOps.size();
+    insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.RawContacts.CONTENT_URI, true))
+            .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, accountType)
+            .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, accountType)
+            .withValue(ContactsContract.RawContacts.SYNC1, url)
+            .build());
 
-      // DATA: NAME
-      ContentProviderOperation.Builder nameBuilder = ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
-              .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
-              .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
+    // DATA: NAME
+    ContentProviderOperation.Builder nameBuilder = ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
+            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
 
-      if (card.getStructuredName() != null) {
-          nameBuilder
-            .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, card.getStructuredName().getGiven())
-            .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, card.getStructuredName().getFamily());
-      }
-      if (card.getFormattedName() != null) {
-          nameBuilder
-            .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, card.getFormattedName().getValue());
-      }
+    if (card.getStructuredName() != null) {
+      nameBuilder
+              .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, card.getStructuredName().getGiven())
+              .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, card.getStructuredName().getFamily());
+    }
+    if (card.getFormattedName() != null) {
+      nameBuilder
+              .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, card.getFormattedName().getValue());
+    }
 
-    //          if (!card.getStructuredName().getPrefixes().isEmpty()) {
-    //            nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.PREFIX, card.getStructuredName().getPrefixes().get(0));
-    //          }
-    //          if (!card.getStructuredName().getSuffixes().isEmpty()) {
-    //            nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.SUFFIX, card.getStructuredName().getSuffixes().get(0));
-    //          }
+    if (!card.getStructuredName().getPrefixes().isEmpty()) {
+      nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.PREFIX, card.getStructuredName().getPrefixes().get(0));
+    }
+    if (!card.getStructuredName().getSuffixes().isEmpty()) {
+      nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.SUFFIX, card.getStructuredName().getSuffixes().get(0));
+    }
 
-      insertOps.add(nameBuilder.build());
+    insertOps.add(nameBuilder.build());
 
-      // DATA: PHONE
-      for (Telephone number : card.getTelephoneNumbers()) {
-        insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, number.getText())
-                .build());
-      }
-
-      // DATA: EMAIL
-      for (Email email : card.getEmails()) {
-        insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, email.getValue())
-                .build());
-      }
-
-      // DATA: PHOTO
-      // TODO
-
-      // DATA: ORGANIZATION
-      if (card.getOrganization() != null) {
-        insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Organization.COMPANY, card.getOrganization().getValues().get(0))
-                .withValue(ContactsContract.CommonDataKinds.Organization.TITLE, card.getOrganization().getValues().get(1))
-                .build());
-      }
-
-      // DATA: IM
-      // TODO
-
-      // DATA: NICKNAME
-      if (card.getNickname() != null) {
-        insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Nickname.NAME, card.getNickname().getValues().get(0))
-                .build());
-      }
-
-      // DATA: NOTE
-      if (!card.getNotes().isEmpty()) {
-        insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Note.NOTE, card.getNotes().get(0))
-                .build());
-      }
-
-      // DATA: GROUP_MEMBERSHIP
-      // TODO
-
-      // DATA: POSTAL
-      for (Address address : card.getAddresses()) {
-        insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS, address.getLabel())
-                .build());
-      }
-
-      // DATA: WEBSITE
-      for (Url website : card.getUrls()) {
-        insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Website.URL, website.getValue())
-                .build());
-      }
-
-      // DATA: EVENT
-      // TODO
-
-      // DATA: RELATIONSHIP
-      // TODO
-
-      // DATA: SIP_ADDRESS
-      // TODO
-
-      // Data: CTAG
+    // DATA: PHONE
+    for (Telephone number : card.getTelephoneNumbers()) {
       insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
               .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
-              .withValue(ContactsContract.Data.MIMETYPE, ctx.getResources().getString(R.string.contact_item_ctag_mimetype))
-              .withValue(ContactsContract.Data.DATA1, cTag)
+              .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+              .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, number.getText())
+              .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, number.getParameter(Constants.VCARD_FIELD_TYPE))
               .build());
+    }
 
-      // DATA: URL
+    // DATA: EMAIL
+    for (Email email : card.getEmails()) {
       insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
               .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
-              .withValue(ContactsContract.Data.MIMETYPE, ctx.getResources().getString(R.string.contact_item_url_mimetype))
-              .withValue(ContactsContract.Data.DATA1, url)
+              .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+              .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, email.getValue())
+              .withValue(ContactsContract.CommonDataKinds.Email.TYPE, email.getParameter(Constants.VCARD_FIELD_TYPE))
               .build());
+    }
 
-      try {
-        ctx.getContentResolver().applyBatch(ContactsContract.AUTHORITY, insertOps);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+    // DATA: PHOTO
+    if (!card.getPhotos().isEmpty()) {
+      insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
+              .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+              .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+              .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, card.getPhotos().get(0).getData())
+              .build());
+    }
+
+    // DATA: ORGANIZATION
+    if (card.getOrganization() != null) {
+      insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
+              .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+              .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
+              .withValue(ContactsContract.CommonDataKinds.Organization.COMPANY, card.getOrganization().getValues().get(0))
+              .withValue(ContactsContract.CommonDataKinds.Organization.TITLE, card.getOrganization().getValues().get(1))
+              .build());
+    }
+
+    // DATA: NICKNAME
+    if (card.getNickname() != null) {
+      insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
+              .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+              .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE)
+              .withValue(ContactsContract.CommonDataKinds.Nickname.NAME, card.getNickname().getValues().get(0))
+              .build());
+    }
+
+    // DATA: NOTE
+    if (!card.getNotes().isEmpty()) {
+      insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
+              .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+              .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
+              .withValue(ContactsContract.CommonDataKinds.Note.NOTE, card.getNotes().get(0))
+              .build());
+    }
+
+    // DATA: POSTAL
+    for (Address address : card.getAddresses()) {
+      insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
+              .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+              .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE)
+              .withValue(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS, address.getLabel())
+              .withValue(ContactsContract.CommonDataKinds.StructuredPostal.TYPE, address.getParameter(Constants.VCARD_FIELD_TYPE))
+              .build());
+    }
+
+    // DATA: WEBSITE
+    for (Url website : card.getUrls()) {
+      insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
+              .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+              .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE)
+              .withValue(ContactsContract.CommonDataKinds.Website.URL, website.getValue())
+              .build());
+    }
+
+    // Data: CTAG
+    insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
+            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+            .withValue(ContactsContract.Data.MIMETYPE, ctx.getResources().getString(R.string.contact_item_ctag_mimetype))
+            .withValue(ContactsContract.Data.DATA1, cTag)
+            .build());
+
+    // DATA: URL
+    insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI, true))
+            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+            .withValue(ContactsContract.Data.MIMETYPE, ctx.getResources().getString(R.string.contact_item_url_mimetype))
+            .withValue(ContactsContract.Data.DATA1, url)
+            .build());
+
+    try {
+      ctx.getContentResolver().applyBatch(ContactsContract.AUTHORITY, insertOps);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 }
 

@@ -7,8 +7,6 @@ import android.net.Uri;
 import android.util.Log;
 
 public class StubContactsProvider extends ContentProvider {
-    private final static String TAG = "ContactsProvider";
-
     @Override
     public boolean onCreate() {
       return true;
@@ -16,7 +14,6 @@ public class StubContactsProvider extends ContentProvider {
 
     @Override
     public String getType(Uri uri) {
-      Log.d(TAG, "getType: " + uri);
       return null;
     }
 
@@ -27,19 +24,16 @@ public class StubContactsProvider extends ContentProvider {
             String selection,
             String[] selectionArgs,
             String sortOrder) {
-      Log.d(TAG, "getType: " + uri + ", " + projection + ", " + selection + ", " + selectionArgs + ", " + sortOrder);
       return null;
     }
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-      Log.d(TAG, "insert: " + uri + ", " + values);
       return null;
     }
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-      Log.d(TAG, "delete: " + uri + ", " + selection + selectionArgs);
       return 0;
     }
 
@@ -49,7 +43,6 @@ public class StubContactsProvider extends ContentProvider {
             ContentValues values,
             String selection,
             String[] selectionArgs) {
-      Log.d(TAG, "update: " + uri + ", " + values + selection + selectionArgs);
       return 0;
     }
 }
