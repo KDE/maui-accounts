@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
   QQmlApplicationEngine engine;
 
   app.setApplicationName("Accounts");
-  app.setApplicationVersion("0.1.3");
+  app.setApplicationVersion("0.2");
   app.setApplicationDisplayName("Accounts");
 
   qmlRegisterSingletonType<MainViewController>(
