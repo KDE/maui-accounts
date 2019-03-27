@@ -53,9 +53,9 @@ int main(int argc, char* argv[]) {
   QGuiApplication app(argc, argv);
   QQmlApplicationEngine engine;
 
-  app.setApplicationName("OpenDesktop Connector");
-  app.setApplicationVersion("0.1.0");
-  app.setApplicationDisplayName("OpenDesktop Connector");
+  app.setApplicationName("Accounts");
+  app.setApplicationVersion("0.1.3");
+  app.setApplicationDisplayName("Accounts");
 
   qmlRegisterSingletonType<MainViewController>(
       uri, 1, 0, "MainViewController", mainviewcontroller_singleton_provider);
