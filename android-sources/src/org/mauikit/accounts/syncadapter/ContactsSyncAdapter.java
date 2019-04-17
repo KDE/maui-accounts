@@ -2,11 +2,15 @@ package org.mauikit.accounts.syncadapter;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SyncResult;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -15,22 +19,19 @@ import org.mauikit.accounts.dav.CardDAV;
 import org.mauikit.accounts.dav.dto.Contact;
 import org.mauikit.accounts.utils.Constants;
 import org.mauikit.accounts.utils.Utils;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
   private static final String TAG = "ContactsSyncAdapter";
+  private static final String NOTIFICATION_CHANNEL_ID = "default";
 
   // Global variables
+  private NotificationManager m_notificationManager;
+  private Notification.Builder m_notificationBuilder;
   private ContentResolver mContentResolver;
   private Context mContext;
 
@@ -68,10 +69,45 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
           SyncResult syncResult) {
     Log.d(TAG, "onPerformSync: Sync Started");
 
+    if (m_notificationManager == null) {
+      m_notificationManager = (NotificationManager)mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, "Accounts Notification Channel", NotificationManager.IMPORTANCE_HIGH);
+        channel.setDescription("");
+
+        NotificationManager notificationManager = getContext().getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
+        m_notificationBuilder = new Notification.Builder(mContext, NOTIFICATION_CHANNEL_ID);
+      } else {
+        m_notificationBuilder = new Notification.Builder(mContext);
+      }
+
+      m_notificationBuilder = new Notification.Builder(mContext);
+      m_notificationBuilder.setSmallIcon(R.drawable.ic_launcher_background);
+      m_notificationBuilder.setContentTitle("Accounts - Syncing Contacts");
+      m_notificationBuilder.setOngoing(true);
+    }
+
+    m_notificationBuilder.setContentText("Syncing Contacts");
+    m_notificationBuilder.setProgress(0, 0, true);
+    m_notificationManager.notify(1, m_notificationBuilder.build());
+
     SyncManager manager = new SyncManager(AccountManager.get(mContext).getUserData(account, Constants.ACCOUNT_USERDATA_USERNAME), AccountManager.get(mContext).getPassword(account), AccountManager.get(mContext).getUserData(account, Constants.ACCOUNT_USERDATA_URL));
     manager.doSync();
 
     Log.d(TAG, "onPerformSync: Sync Complete");
+
+    m_notificationBuilder.setContentText("Accounts - Sync Complete");
+    m_notificationBuilder.setOngoing(false);
+    m_notificationBuilder.setProgress(0, 0, false);
+    m_notificationManager.notify(1, m_notificationBuilder.build());
+  }
+
+  private void updateNotificationProgress(int max, int progress) {
+    Log.d(TAG, "Progress : " + max + " " + progress);
+    m_notificationBuilder.setProgress(max, progress, false);
+    m_notificationManager.notify(1, m_notificationBuilder.build());
   }
 
   private class SyncManager {
@@ -84,6 +120,8 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
     public void doSync() {
+      int totalContacts = 0;
+      int syncedContacts = 0;
       List<Contact> remoteContacts;
       String[][] localContacts;
       List<List<String>> ops = new ArrayList<>();
@@ -100,6 +138,10 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
       }
 
       localContacts = Utils.serializeContacts(getContext(), getContext().getResources().getString(R.string.account_type));
+
+      totalContacts = localContacts.length;
+
+      updateNotificationProgress(totalContacts, syncedContacts);
 
       for (String[] localContact : localContacts) {
         String vCard = localContact[0];
@@ -172,9 +214,15 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
             Log.wtf(TAG, "doSync: Control should never come here. Something is wrong.");
           }
         }
+
+        syncedContacts++;
+        updateNotificationProgress(totalContacts, syncedContacts);
       }
 
       String[][] deletedContacts = Utils.getDeletedContacts(getContext(), getContext().getResources().getString(R.string.account_type));
+
+      totalContacts += deletedContacts.length;
+      updateNotificationProgress(totalContacts, syncedContacts);
 
       Log.d(TAG, "doSync: deletedContacts length : " + deletedContacts.length);
 
@@ -197,9 +245,14 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
             remoteContacts.remove(c);
           }
         }
+
+        syncedContacts++;
+        updateNotificationProgress(totalContacts, syncedContacts);
       }
 
       Log.d(TAG, "doSync: Remaining Remote Contacts Length : " + remoteContacts.size());
+
+      totalContacts += remoteContacts.size();
 
       for (Contact c : remoteContacts) {
         List<String> op = buildOperation(Constants.SYNC_OPERATION_INSERT, c.getVcard(), c.getEtag(), c.getHref().toString(), "");
@@ -207,6 +260,9 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
         if (op.size() == 5) {
           ops.add(op);
         }
+
+        syncedContacts++;
+        updateNotificationProgress(totalContacts, syncedContacts);
       }
 
       parseAndSendOps(ops);
