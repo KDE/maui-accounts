@@ -1,12 +1,19 @@
 QT += quick concurrent svg
-android: QT += androidextras
-
 CONFIG += c++11
 
-android: ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android-sources
+android: {
+    QT += androidextras
+
+    ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android-sources
+
+    include($$PWD/openssl/openssl.pri)
+
+    DEFINES += ANDROID
+}
 
 include($$PWD/libccdav/ccdav.pri)
-include($$PWD/openssl/openssl.pri)
+
+TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -26,27 +33,34 @@ SOURCES += \
 
 HEADERS += \
   src/entities/SyncManager.hpp \
+  src/entities/SyncThread.hpp \
   src/viewcontrollers/MainViewController.hpp
 
 RESOURCES += src/qml/qml.qrc
 
-OTHER_FILES += \
-  .gitignore \
-  android-sources/AndroidManifest.xml \
-  android-sources/src/org/mauikit/accounts/* \
-  android-sources/src/org/mauikit/accounts/syncadapter/* \
-  android-sources/src/org/mauikit/accounts/utils/* \
-  android-sources/res/drawable/* \
-  android-sources/res/drawable-v24/* \
-  android-sources/res/mipmap-anydpi-v26/* \
-  android-sources/res/mipmap-hdpi/* \
-  android-sources/res/mipmap-mdpi/* \
-  android-sources/res/mipmap-xhdpi/* \
-  android-sources/res/mipmap-xxhdpi/* \
-  android-sources/res/mipmap-xxxhdpi/* \
-  android-sources/res/values/* \
-  android-sources/res/xml/* \
-  android-sources/libs/*
+OTHER_FILES += .gitignore
+
+android : {
+    OTHER_FILES += \
+      android-sources/AndroidManifest.xml \
+      android-sources/src/org/mauikit/accounts/* \
+      android-sources/src/org/mauikit/accounts/syncadapter/* \
+      android-sources/src/org/mauikit/accounts/utils/* \
+      android-sources/src/org/mauikit/accounts/dav/* \
+      android-sources/src/org/mauikit/accounts/dav/dto/* \
+      android-sources/src/org/mauikit/accounts/dav/utils/* \
+      android-sources/res/drawable/* \
+      android-sources/res/drawable-v24/* \
+      android-sources/res/mipmap-anydpi-v26/* \
+      android-sources/res/mipmap-hdpi/* \
+      android-sources/res/mipmap-mdpi/* \
+      android-sources/res/mipmap-xhdpi/* \
+      android-sources/res/mipmap-xxhdpi/* \
+      android-sources/res/mipmap-xxxhdpi/* \
+      android-sources/res/values/* \
+      android-sources/res/xml/* \
+      android-sources/libs/*
+}
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =

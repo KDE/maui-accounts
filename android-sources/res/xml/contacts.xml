@@ -115,6 +115,9 @@
 
         <ContactsDataKind
             android:mimeType="@string/contact_item_url_mimetype"/>
+
+        <ContactsDataKind
+            android:mimeType="@string/contact_item_creation_date_mimetype"/>
     </EditSchema>
 
 </ContactsAccountType>

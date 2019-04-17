@@ -9,15 +9,20 @@ class MainViewController : public QObject {
  public slots:
   void addOpendesktopAccount(QString protocol, QString username,
                              QString password);
-  void addCustomAccount(QString protocol, QString server, QString username,
+  void addCustomAccount(QString protocol, QString url, QString username,
                         QString password);
   void getAccountList();
   void removeAccount(QString accountName);
+  void syncAccount(QString accountName);
 
  signals:
   void showToast(QString message);
   void accountList(QList<QString> accounts);
   void accountAdded();
+
+ private:
+  void addAccount(QString protocol, QString url, QString username,
+                  QString password, QString accountName);
 };
 
 #endif

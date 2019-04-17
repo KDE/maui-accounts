@@ -9,9 +9,15 @@
 #include <QString>
 
 class SyncManager : public QObject {
+  Q_OBJECT
  public:
   SyncManager(QString username, QString password, QString url);
-  void doSync();
+
+ public slots:
+  void doSyncAndroid();
+
+ signals:
+  void syncComplete();
 
  private:
   const QString uuidNs = "eeebe4e7-2900-483c-aabf-a1b6e0b278fe";
@@ -22,7 +28,7 @@ class SyncManager : public QObject {
   const QString SYNC_OPERATION_DELETE = "sync_op_delete";
 
   CardDAV *m_CardDAV;
-  QCoreApplication *app;
+  QCoreApplication *app = nullptr;
   QString url;
 
   QList<QString> createContact(QString rawContactId, QString vCard);

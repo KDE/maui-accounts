@@ -6,5 +6,6 @@
         <file>icons/delete.png</file>
         <file>icons/refresh.png</file>
         <file>ProgressDialog.qml</file>
+        <file>icons/menu.png</file>
     </qresource>
 </RCC>

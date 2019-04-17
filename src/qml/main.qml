@@ -2,7 +2,6 @@ import QtQuick 2.12
 import QtQuick.Window 2.12
 import QtQuick.Controls 2.5
 import QtQuick.Layouts 1.3
-import QtQuick.Dialogs 1.2
 
 import org.mauikit.accounts 1.0 as Accounts
 
@@ -55,21 +54,6 @@ ApplicationWindow {
 
     ListModel {
         id: listmodelAccounts
-
-//        ListElement {
-//            name: "Opendesktop"
-//            username: "anupam.basak27"
-//        }
-
-//        ListElement {
-//            name: "4Shared"
-//            username: "anupamb"
-//        }
-
-//        ListElement {
-//            name: "Nitrux"
-//            username: "anupam"
-//        }
     }
 
     StackLayout {
@@ -124,6 +108,24 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             height: 80
 
+                            Menu {
+                                id: accountsMenu
+
+                                MenuItem {
+                                    text: "Sync Now"
+                                    onClicked: {
+                                        Accounts.MainViewController.syncAccount(listmodelAccounts.get(index).accountName)
+                                    }
+                                }
+
+                                MenuItem {
+                                    text: "Remove"
+                                    onClicked: {
+                                        Accounts.MainViewController.removeAccount(listmodelAccounts.get(index).accountName)
+                                    }
+                                }
+                            }
+
                             Rectangle {
                                 color: "#f8f8f8"
                                 radius:4
@@ -148,14 +150,14 @@ ApplicationWindow {
 
                                 RoundButton {
                                     flat: true
-                                    icon.source: "icons/delete.png"
+                                    icon.source: "icons/menu.png"
                                     display: AbstractButton.IconOnly
                                     anchors.right: parent.right
                                     anchors.rightMargin: 16
                                     anchors.verticalCenter: parent.verticalCenter
 
                                     onClicked: {
-                                        Accounts.MainViewController.removeAccount(listmodelAccounts.get(index).accountName)
+                                        accountsMenu.popup(parent)
                                     }
                                 }
                             }
@@ -236,6 +238,7 @@ ApplicationWindow {
                         id: inputProtocol
                         Layout.fillWidth: true
                         textRole: "value"
+                        visible: false
 
                         model: ListModel {
                             id: inputProtocolModel

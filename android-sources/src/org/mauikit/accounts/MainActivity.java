@@ -107,6 +107,19 @@ public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity 
     }
   }
 
+  public static void syncAccount(String accountName) {
+    AccountManager m_accountManager = AccountManager.get(m_instance);
+    Account[] accounts = m_accountManager.getAccountsByType(m_instance.getResources().getString(R.string.account_type));
+
+    for (Account account : accounts) {
+      if (account.name.equals(accountName)) {
+        ContentResolver.requestSync(account, ContactsContract.AUTHORITY, Bundle.EMPTY);
+
+        break;
+      }
+    }
+  }
+
   public static String[][] getContacts() {
     return Utils.serializeContacts(m_instance.getApplicationContext(), m_instance.getResources().getString(R.string.account_type));
   }

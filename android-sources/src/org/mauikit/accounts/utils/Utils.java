@@ -232,12 +232,12 @@ public class Utils {
     Log.d(TAG, "syncContacts: Applying local changes");
 
     for (int i = 0; i < ops.length; i++) {
-      for (int j = 0; j < ops[i].length; j++) {
-        byte[] data = Base64.decode(ops[i][j], Base64.DEFAULT);
-        String text = new String(data, StandardCharsets.UTF_8);
+      // for (int j = 0; j < ops[i].length; j++) {
+      //   byte[] data = Base64.decode(ops[i][j], Base64.DEFAULT);
+      //   String text = new String(data, StandardCharsets.UTF_8);
 
-        ops[i][j] = text;
-      }
+      //   ops[i][j] = text;
+      // }
 
       String operation = ops[i][0];
       String vCard = ops[i][1];

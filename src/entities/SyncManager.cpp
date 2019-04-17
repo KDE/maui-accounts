@@ -4,25 +4,37 @@
 #include "../libccdav/lib/utils/CardDAVReply.hpp"
 #include "../libccdav/lib/utils/NetworkHelper.hpp"
 
+#ifdef ANDROID
 #include <jni.h>
+#include <QtAndroidExtras/QAndroidJniEnvironment>
+#include <QtAndroidExtras/QAndroidJniObject>
+#endif
+
 #include <QDebug>
 #include <QList>
 #include <QUuid>
-#include <QtAndroidExtras/QAndroidJniEnvironment>
-#include <QtAndroidExtras/QAndroidJniObject>
+#include <QtConcurrent>
 
 SyncManager::SyncManager(QString username, QString password, QString url) {
-  int argc = 1;
-  char *argv[] = {"sync"};
-
   this->m_CardDAV = new CardDAV(url, username, password);
-  this->app = new QCoreApplication(argc, argv);
 
   this->url = url;
 }
 
-void SyncManager::doSync() {
+#ifdef ANDROID
+void SyncManager::doSyncAndroid() {
   qDebug() << "doSync(): ";
+
+  emit syncComplete();
+
+  return;
+
+  if (app == nullptr) {
+    int argc = 1;
+    char *argv[] = {"sync"};
+
+    this->app = new QCoreApplication(argc, argv);
+  }
 
   bool isError = false;
   QList<QList<QString>> ops;
@@ -32,15 +44,15 @@ void SyncManager::doSync() {
   this->connect(reply, &CardDAVReply::listAllContactsResponse,
                 [=, &remoteContacts](QList<Contact *> contacts) {
                   remoteContacts = contacts;
-                  this->app->exit(0);
+                  app->exit(0);
                 });
   this->connect(reply, &CardDAVReply::error,
                 [=, &isError](QNetworkReply::NetworkError err) {
                   qDebug() << err;
                   isError = true;
-                  this->app->exit(0);
+                  app->exit(0);
                 });
-  this->app->exec();
+  app->exec();
 
   if (isError) {
     qDebug() << "Unknown Error. Stopping Sync";
@@ -214,6 +226,7 @@ void SyncManager::doSync() {
 
   this->parseAndSendOps(ops);
 }
+#endif
 
 void SyncManager::handleNetworkError(QNetworkReply::NetworkError err) {
   qDebug() << err;
@@ -315,6 +328,7 @@ QList<QString> SyncManager::deleteContact(QString rawContactId, QString url) {
   return buildOperation(this->SYNC_OPERATION_DELETE, "", "", url, rawContactId);
 }
 
+#ifdef ANDROID
 void SyncManager::parseAndSendOps(QList<QList<QString>> ops) {
   QAndroidJniEnvironment env;
   jobjectArray jops = env->NewObjectArray(
@@ -343,6 +357,7 @@ void SyncManager::parseAndSendOps(QList<QList<QString>> ops) {
                                             "syncContacts",
                                             "([[Ljava/lang/String;)V", jops);
 }
+#endif
 
 QString SyncManager::getFilenameFromUrl(QString url) {
   return url.mid(url.lastIndexOf("/") + 1);
