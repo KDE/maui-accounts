@@ -1,5 +1,7 @@
 package org.mauikit.accounts.utils;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.content.ContentProviderOperation;
 import android.content.ContentValues;
 import android.content.Context;
@@ -500,6 +502,15 @@ public class Utils {
     } catch (Exception e) {
       e.printStackTrace();
     }
+  }
+
+  public static void updateAccountSyncedContactsCount(Context ctx, Account account) {
+    String accountType = ctx.getResources().getString(R.string.account_type);
+    String RAW_CONTACT_SELECTION = ContactsContract.RawContacts.ACCOUNT_TYPE + " = '" + accountType + "' AND " +
+            ContactsContract.RawContacts.DELETED + " = 0 ";
+    Cursor contacts = ctx.getContentResolver().query(ContactsContract.RawContacts.CONTENT_URI, new String[] {}, RAW_CONTACT_SELECTION, null, null);
+
+    AccountManager.get(ctx).setUserData(account, Constants.ACCOUNT_USERDATA_CONTACTS_COUNT, String.valueOf(contacts.getCount()));
   }
 }
 

@@ -83,15 +83,18 @@ public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity 
     }
   }
 
-  public static String[] getAccounts() {
-    List<String> accountsSerialized = new ArrayList<>();
-    Account[] accounts = AccountManager.get(m_instance).getAccountsByType(m_instance.getResources().getString(R.string.account_type));
+  public static String[][] getAccounts() {
+    List<String[]> accountsSerialized = new ArrayList<>();
+    AccountManager accountManager = AccountManager.get(m_instance);
+
+    Account[] accounts = accountManager.getAccountsByType(m_instance.getResources().getString(R.string.account_type));
 
     for (Account account : accounts) {
-      accountsSerialized.add(account.name);
+      String count = accountManager.getUserData(account, Constants.ACCOUNT_USERDATA_CONTACTS_COUNT);
+      accountsSerialized.add(new String[] {account.name, count != null ? count : "0"});
     }
 
-    return accountsSerialized.toArray(new String[0]);
+    return accountsSerialized.toArray(new String[0][0]);
   }
 
   public static void removeAccount(String accountName) {
@@ -99,7 +102,7 @@ public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity 
     Account[] accounts = m_accountManager.getAccountsByType(m_instance.getResources().getString(R.string.account_type));
 
     for (Account account : accounts) {
-      if (account.name.equals(accountName)) {
+      if (account.name.equals(accountName.replaceFirst(" \\(\\d*\\)", ""))) {
         m_accountManager.removeAccount(account, null, null);
 
         break;
@@ -112,7 +115,7 @@ public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity 
     Account[] accounts = m_accountManager.getAccountsByType(m_instance.getResources().getString(R.string.account_type));
 
     for (Account account : accounts) {
-      if (account.name.equals(accountName)) {
+      if (account.name.equals(accountName.replaceFirst(" \\(\\d*\\)", ""))) {
         ContentResolver.requestSync(account, ContactsContract.AUTHORITY, Bundle.EMPTY);
 
         break;

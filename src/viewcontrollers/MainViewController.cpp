@@ -39,20 +39,25 @@ void MainViewController::getAccountList() {
   QAndroidJniObject accountsArrayJniObject =
       QAndroidJniObject::callStaticObjectMethod(
           "org/mauikit/accounts/MainActivity", "getAccounts",
-          "()[Ljava/lang/String;");
+          "()[[Ljava/lang/String;");
 
   jobjectArray accountsJniArray = accountsArrayJniObject.object<jobjectArray>();
   int len = env->GetArrayLength(accountsJniArray);
 
   for (int i = 0; i < len; i++) {
-    jstring string =
-        static_cast<jstring>(env->GetObjectArrayElement(accountsJniArray, i));
-    const char *accountName = env->GetStringUTFChars(string, 0);
+    jobjectArray array = static_cast<jobjectArray>(
+        env->GetObjectArrayElement(accountsJniArray, i));
+    jstring jAccountName =
+        static_cast<jstring>(env->GetObjectArrayElement(array, 0));
+    jstring jCount = static_cast<jstring>(env->GetObjectArrayElement(array, 1));
+    const char *accountName = env->GetStringUTFChars(jAccountName, 0);
+    const char *count = env->GetStringUTFChars(jCount, 0);
 
-    qDebug() << accountName;
-    accounts.append(accountName);
+    qDebug() << accountName << count;
+    accounts.append(QString(accountName).append(" (" + QString(count) + ")"));
 
-    env->ReleaseStringUTFChars(string, accountName);
+    env->ReleaseStringUTFChars(jAccountName, accountName);
+    env->ReleaseStringUTFChars(jCount, count);
   }
 
   emit accountList(accounts);

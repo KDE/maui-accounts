@@ -96,6 +96,8 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
     SyncManager manager = new SyncManager(AccountManager.get(mContext).getUserData(account, Constants.ACCOUNT_USERDATA_USERNAME), AccountManager.get(mContext).getPassword(account), AccountManager.get(mContext).getUserData(account, Constants.ACCOUNT_USERDATA_URL));
     manager.doSync();
 
+    Utils.updateAccountSyncedContactsCount(getContext(), account);
+
     Log.d(TAG, "onPerformSync: Sync Complete");
 
     m_notificationBuilder.setContentText("Accounts - Sync Complete");
