@@ -64,7 +64,7 @@ void MainViewController::getAccountList() {
 }
 
 void MainViewController::removeAccount(QString accountName) {
-  emit showToast("Deleting Account");
+  showToast("Deleting Account");
 
   QAndroidJniObject::callStaticMethod<void>(
       "org/mauikit/accounts/MainActivity", "removeAccount",
@@ -75,11 +75,17 @@ void MainViewController::removeAccount(QString accountName) {
 }
 
 void MainViewController::syncAccount(QString accountName) {
-  emit showToast("Syncing Account");
+  showToast("Syncing Account");
 
   QAndroidJniObject::callStaticMethod<void>(
       "org/mauikit/accounts/MainActivity", "syncAccount",
       "(Ljava/lang/String;)V",
+      QAndroidJniObject::fromString(accountName).object<jstring>());
+}
+
+void MainViewController::showUrl(QString accountName) {
+  QAndroidJniObject::callStaticMethod<void>(
+      "org/mauikit/accounts/MainActivity", "showUrl", "(Ljava/lang/String;)V",
       QAndroidJniObject::fromString(accountName).object<jstring>());
 }
 
@@ -88,7 +94,8 @@ void MainViewController::addAccount(QString protocol, QString url,
                                     QString accountName) {
   CardDAV *m_CardDAV = new CardDAV(url, username, password);
 
-  emit showToast("Checking Server Credentials");
+  //  showToast("Checking Server Credentials");
+  showIndefiniteProgressDialog("Checking Server Credentials", false);
 
   CardDAVReply *reply = m_CardDAV->testConnection();
   this->connect(
@@ -108,17 +115,38 @@ void MainViewController::addAccount(QString protocol, QString url,
 
           this->getAccountList();
 
-          emit showToast("Account Added to System");
+          hideIndefiniteProgressDialog();
+          showToast("Account Added to System");
         } else {
           qDebug() << "Invalid Username or Password";
-          emit showToast("Invalid Username or Password");
+          showToast("Invalid Username or Password");
         }
       });
   this->connect(reply, &CardDAVReply::error,
                 [=](QNetworkReply::NetworkError err) {
                   qDebug() << "Unknown Error Occured." << err;
-                  //                  emit showToast("Unknown Error Occured");
+                  //                  showToast("Unknown Error Occured");
                 });
+}
+
+void MainViewController::showToast(QString text) {
+  QAndroidJniObject::callStaticMethod<void>(
+      "org/mauikit/accounts/MainActivity", "showToast", "(Ljava/lang/String;)V",
+      QAndroidJniObject::fromString(text).object<jstring>());
+}
+
+void MainViewController::showIndefiniteProgressDialog(QString message,
+                                                      bool isCancelable) {
+  QAndroidJniObject::callStaticMethod<void>(
+      "org/mauikit/accounts/MainActivity", "showIndefiniteProgressDialog",
+      "(Ljava/lang/String;Z)V",
+      QAndroidJniObject::fromString(message).object<jstring>(),
+      isCancelable ? JNI_TRUE : JNI_FALSE);
+}
+
+void MainViewController::hideIndefiniteProgressDialog() {
+  QAndroidJniObject::callStaticMethod<void>("org/mauikit/accounts/MainActivity",
+                                            "hideIndefiniteProgressDialog");
 }
 #else
 void MainViewController::addOpendesktopAccount(QString protocol,

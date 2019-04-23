@@ -14,15 +14,18 @@ class MainViewController : public QObject {
   void getAccountList();
   void removeAccount(QString accountName);
   void syncAccount(QString accountName);
+  void showUrl(QString accountName);
 
  signals:
-  void showToast(QString message);
   void accountList(QList<QString> accounts);
   void accountAdded();
 
  private:
   void addAccount(QString protocol, QString url, QString username,
                   QString password, QString accountName);
+  void showToast(QString text);
+  void showIndefiniteProgressDialog(QString message, bool isCancelable);
+  void hideIndefiniteProgressDialog();
 };
 
 #endif

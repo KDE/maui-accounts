@@ -511,9 +511,7 @@ public class Utils {
                                    ContactsContract.RawContacts.ACCOUNT_NAME + " = '" + account.name + "' AND " +
                                    ContactsContract.RawContacts.DELETED + " = 0 ";
     Cursor contacts = ctx.getContentResolver().query(ContactsContract.RawContacts.CONTENT_URI, null, RAW_CONTACT_SELECTION, null, null);
-
-    DatabaseUtils.dumpCursorToString(contacts);
-
+    
     AccountManager.get(ctx).setUserData(account, Constants.ACCOUNT_USERDATA_CONTACTS_COUNT, String.valueOf(contacts.getCount()));
   }
 }

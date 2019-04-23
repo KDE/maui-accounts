@@ -100,6 +100,29 @@ ApplicationWindow {
 
                     spacing: 16
 
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.bottomMargin: 24
+                        visible: listmodelAccounts.count > 0
+
+                        Label {
+                            id: labelCarddav
+                            color: "#888888"
+                            text: "CardDAV"
+
+                            anchors.top: parent.top
+                        }
+
+                        Rectangle {
+                            height: 2
+                            color: "#cccccc"
+                            radius:4
+                            anchors.top: labelCarddav.bottom
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                        }
+                    }
+
                     Repeater {
                         model: listmodelAccounts
 
@@ -107,6 +130,13 @@ ApplicationWindow {
                             id: listmodelAccountsDelegate
                             Layout.fillWidth: true
                             height: 80
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    Accounts.MainViewController.showUrl(listmodelAccounts.get(index).accountName)
+                                }
+                            }
 
                             Menu {
                                 id: accountsMenu
@@ -304,6 +334,10 @@ ApplicationWindow {
         onAccountAdded: {
             stackPages.currentIndex = 0;
             swipeView.setCurrentIndex(0)
+
+            inputServer.text = ""
+            inputUsername.text = ""
+            inputPassword.text = ""
         }
 
         onAccountList: {
@@ -325,6 +359,22 @@ ApplicationWindow {
         Accounts.MainViewController.getAccountList()
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

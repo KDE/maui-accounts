@@ -2,10 +2,15 @@ package org.mauikit.accounts;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentResolver;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.DatabaseUtils;
@@ -15,6 +20,7 @@ import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import org.mauikit.accounts.utils.Constants;
 import org.mauikit.accounts.utils.Utils;
@@ -28,6 +34,7 @@ public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity 
   private final static String TAG = "MainActivity";
   private Account mAccount = null;
   private static MainActivity m_instance = null;
+  private static ProgressDialog progressDialog = null;
 
   public MainActivity() {
     m_instance = this;
@@ -106,6 +113,7 @@ public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity 
 
     for (Account account : accounts) {
       if (account.name.equals(accountName.replaceFirst(" \\(\\d*\\)", ""))) {
+        ContentResolver.cancelSync(account, ContactsContract.AUTHORITY);
         m_accountManager.removeAccount(account, null, null);
 
         break;
@@ -124,6 +132,82 @@ public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity 
         break;
       }
     }
+  }
+
+  public static void showUrl(String accountName) {
+    AccountManager m_accountManager = AccountManager.get(m_instance);
+    Account[] accounts = m_accountManager.getAccountsByType(m_instance.getResources().getString(R.string.account_type));
+
+    for (Account account : accounts) {
+      if (account.name.equals(accountName.replaceFirst(" \\(\\d*\\)", ""))) {
+        showInfoDialog("Account URL", AccountManager.get(m_instance).getUserData(account, Constants.ACCOUNT_USERDATA_URL), true);
+
+        break;
+      }
+    }
+  }
+
+  public static void showToast(String text) {
+    final String toastText = text;
+    m_instance.runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        Toast.makeText(m_instance, toastText, Toast.LENGTH_LONG).show();
+      }
+    });
+  }
+
+  public static void showIndefiniteProgressDialog(String message, boolean isCancelable) {
+    final String dialogMessage = message;
+    final boolean dialogIsCancelable = isCancelable;
+
+    m_instance.runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        if (progressDialog == null) {
+          progressDialog = new ProgressDialog(m_instance);
+          progressDialog.setIndeterminate(true);
+        }
+
+        progressDialog.setCancelable(dialogIsCancelable);
+
+        progressDialog.setMessage(dialogMessage);
+        progressDialog.show();
+      }
+    });
+  }
+
+  public static void hideIndefiniteProgressDialog() {
+    progressDialog.dismiss();
+  }
+
+  public static void showInfoDialog(String title, String text, final boolean enableCopyText) {
+    final String m_title = title;
+    final String m_text = text;
+
+    m_instance.runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(m_instance);
+
+        dialogBuilder.setTitle(m_title);
+        dialogBuilder.setMessage(m_text);
+        dialogBuilder.setNegativeButton("Close", null);
+
+        if (enableCopyText) {
+          dialogBuilder.setPositiveButton("Copy", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+              ClipboardManager clipboard = (ClipboardManager) m_instance.getSystemService(Context.CLIPBOARD_SERVICE);
+              ClipData clip = ClipData.newPlainText("Account URL", m_text);
+              clipboard.setPrimaryClip(clip);
+            }
+          });
+        }
+
+        dialogBuilder.create().show();
+      }
+    });
   }
 
 //  public static String[][] getContacts() {
