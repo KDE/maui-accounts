@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
   qDebug() << QCoreApplication::arguments();
 
   app.setApplicationName("Accounts");
-  app.setApplicationVersion("0.3.0");
+  app.setApplicationVersion("0.3.1");
   //  SyncThread* s = new SyncThread(username_str, password_str, url_str);
   //  s->start();
   app.setApplicationDisplayName("Accounts");
