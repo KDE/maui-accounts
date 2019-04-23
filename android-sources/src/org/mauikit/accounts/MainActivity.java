@@ -12,8 +12,6 @@ import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -26,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity {
   private final static String TAG = "MainActivity";
   private Account mAccount = null;
   private static MainActivity m_instance = null;
