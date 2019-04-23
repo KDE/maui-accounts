@@ -6,6 +6,7 @@ import android.content.ContentProviderOperation;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.util.Base64;
@@ -31,11 +32,12 @@ import ezvcard.property.Url;
 public class Utils {
   private static final String TAG = "Utils";
 
-  public static String[][] serializeContacts(Context ctx, String accountType) {
+  public static String[][] serializeContacts(Context ctx, String accountName, String accountType) {
     List<String[]> serializedData = new ArrayList<>();
 
     String RAW_CONTACT_SELECTION = ContactsContract.RawContacts.ACCOUNT_TYPE + " = '" + accountType + "' AND " +
-            ContactsContract.RawContacts.DELETED + " = 0 ";
+                                   ContactsContract.RawContacts.ACCOUNT_NAME + " = '" + accountName + "' AND " +
+                                   ContactsContract.RawContacts.DELETED + " = 0 ";
     String DATA_SELECTION = ContactsContract.Data.RAW_CONTACT_ID + " = ? AND " + ContactsContract.Data.MIMETYPE + " = ?";
     Cursor contacts = ctx.getContentResolver().query(ContactsContract.RawContacts.CONTENT_URI, null, RAW_CONTACT_SELECTION, null, null);
     Cursor commonDataCursor;
@@ -230,7 +232,7 @@ public class Utils {
     return serializedData.toArray(new String[0][0]);
   }
 
-  public static void syncContacts(String ops[][], Context ctx, String accountType) {
+  public static void syncContacts(String ops[][], Context ctx, Account account) {
     Log.d(TAG, "syncContacts: Applying local changes");
 
     for (int i = 0; i < ops.length; i++) {
@@ -254,7 +256,7 @@ public class Utils {
         case Constants.SYNC_OPERATION_INSERT: {
           Log.d(TAG, "syncContacts: SYNC_OPERATION_INSERT");
 
-          insertContact(ctx, accountType, vCard, url, cTag);
+          insertContact(ctx, account.name, account.type, vCard, url, cTag);
 
           break;
         }
@@ -267,7 +269,7 @@ public class Utils {
 
           ctx.getContentResolver().delete(Utils.addCallerIsSyncAdapterParameter(ContactsContract.RawContacts.CONTENT_URI, true), DELETE_DATA_SELECTION, DELETE_DATA_SELECTION_ARGS);
 
-          insertContact(ctx, accountType, vCard, url, cTag);
+          insertContact(ctx, account.name, account.type, vCard, url, cTag);
 
           break;
         }
@@ -371,7 +373,7 @@ public class Utils {
     return uri;
   }
 
-  private static void insertContact(Context ctx, String accountType, String vCard, String url, String cTag) {
+  private static void insertContact(Context ctx, String accountName, String accountType, String vCard, String url, String cTag) {
     VCard card = Ezvcard.parse(vCard).first();
     ArrayList<ContentProviderOperation> insertOps =
             new ArrayList<>();
@@ -379,7 +381,7 @@ public class Utils {
     int rawContactInsertIndex = insertOps.size();
     insertOps.add(ContentProviderOperation.newInsert(Utils.addCallerIsSyncAdapterParameter(ContactsContract.RawContacts.CONTENT_URI, true))
             .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, accountType)
-            .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, accountType)
+            .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, accountName)
             .withValue(ContactsContract.RawContacts.SYNC1, url)
             .build());
 
@@ -505,10 +507,12 @@ public class Utils {
   }
 
   public static void updateAccountSyncedContactsCount(Context ctx, Account account) {
-    String accountType = ctx.getResources().getString(R.string.account_type);
-    String RAW_CONTACT_SELECTION = ContactsContract.RawContacts.ACCOUNT_TYPE + " = '" + accountType + "' AND " +
-            ContactsContract.RawContacts.DELETED + " = 0 ";
-    Cursor contacts = ctx.getContentResolver().query(ContactsContract.RawContacts.CONTENT_URI, new String[] {}, RAW_CONTACT_SELECTION, null, null);
+    String RAW_CONTACT_SELECTION = ContactsContract.RawContacts.ACCOUNT_TYPE + " = '" + account.type + "' AND " +
+                                   ContactsContract.RawContacts.ACCOUNT_NAME + " = '" + account.name + "' AND " +
+                                   ContactsContract.RawContacts.DELETED + " = 0 ";
+    Cursor contacts = ctx.getContentResolver().query(ContactsContract.RawContacts.CONTENT_URI, null, RAW_CONTACT_SELECTION, null, null);
+
+    DatabaseUtils.dumpCursorToString(contacts);
 
     AccountManager.get(ctx).setUserData(account, Constants.ACCOUNT_USERDATA_CONTACTS_COUNT, String.valueOf(contacts.getCount()));
   }

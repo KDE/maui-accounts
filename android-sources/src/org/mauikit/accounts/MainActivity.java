@@ -2,28 +2,33 @@ package org.mauikit.accounts;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.content.ContentResolver;
+import android.app.ProgressDialog;
 import android.content.ContentProviderOperation;
+import android.content.ContentProviderResult;
+import android.content.ContentResolver;
+import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.provider.ContactsContract;
+import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
-import android.os.Environment;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.io.File;
 
 import org.mauikit.accounts.utils.Constants;
 import org.mauikit.accounts.utils.Utils;
 
-public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
+public class MainActivity extends AppCompatActivity {
   private final static String TAG = "MainActivity";
+  private Account mAccount = null;
   private static MainActivity m_instance = null;
 
   public MainActivity() {
@@ -59,7 +64,7 @@ public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity 
     ContentResolver.setSyncAutomatically(newAccount, ContactsContract.AUTHORITY, true);
 
     // Set this account periodically sync with the specified interval
-    ContentResolver.addPeriodicSync(newAccount, ContactsContract.AUTHORITY, Bundle.EMPTY, 21600);
+    ContentResolver.addPeriodicSync(newAccount, ContactsContract.AUTHORITY, Bundle.EMPTY, 86400);
 
     Bundle bundle = new Bundle();
     bundle.putString(Constants.ACCOUNT_USERDATA_ACCOUNTNAME, accountName);
@@ -123,15 +128,15 @@ public class MainActivity extends org.qtproject.qt5.android.bindings.QtActivity 
     }
   }
 
-  public static String[][] getContacts() {
-    return Utils.serializeContacts(m_instance.getApplicationContext(), m_instance.getResources().getString(R.string.account_type));
-  }
-
-  public static String[][] getDeletedContacts() {
-    return Utils.getDeletedContacts(m_instance.getApplicationContext(), m_instance.getResources().getString(R.string.account_type));
-  }
-
-  public static void syncContacts(String ops[][]) {
-    Utils.syncContacts(ops, m_instance.getApplicationContext(), m_instance.getResources().getString(R.string.account_type));
-  }
+//  public static String[][] getContacts() {
+//    return Utils.serializeContacts(m_instance.getApplicationContext(), m_instance.getResources().getString(R.string.account_type));
+//  }
+//
+//  public static String[][] getDeletedContacts() {
+//    return Utils.getDeletedContacts(m_instance.getApplicationContext(), m_instance.getResources().getString(R.string.account_type));
+//  }
+//
+//  public static void syncContacts(String ops[][]) {
+//    Utils.syncContacts(ops, m_instance.getApplicationContext(), m_instance.getResources().getString(R.string.account_type));
+//  }
 }

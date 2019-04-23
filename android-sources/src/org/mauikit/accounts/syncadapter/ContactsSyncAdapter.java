@@ -93,7 +93,7 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
     m_notificationBuilder.setProgress(0, 0, true);
     m_notificationManager.notify(1, m_notificationBuilder.build());
 
-    SyncManager manager = new SyncManager(AccountManager.get(mContext).getUserData(account, Constants.ACCOUNT_USERDATA_USERNAME), AccountManager.get(mContext).getPassword(account), AccountManager.get(mContext).getUserData(account, Constants.ACCOUNT_USERDATA_URL));
+    SyncManager manager = new SyncManager(account);
     manager.doSync();
 
     Utils.updateAccountSyncedContactsCount(getContext(), account);
@@ -115,10 +115,16 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
   private class SyncManager {
     private CardDAV cardDAV;
     private String url;
+    private Account account;
 
-    public SyncManager(String username, String password, String url) {
+    public SyncManager(Account account) {
+      String username = AccountManager.get(mContext).getUserData(account, Constants.ACCOUNT_USERDATA_USERNAME);
+      String password = AccountManager.get(mContext).getPassword(account);
+      String url = AccountManager.get(mContext).getUserData(account, Constants.ACCOUNT_USERDATA_URL);
+
       this.cardDAV = new CardDAV(url, username, password);
       this.url = url;
+      this.account = account;
     }
 
     public void doSync() {
@@ -139,7 +145,7 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
         return;
       }
 
-      localContacts = Utils.serializeContacts(getContext(), getContext().getResources().getString(R.string.account_type));
+      localContacts = Utils.serializeContacts(getContext(), account.name, account.type);
 
       totalContacts = localContacts.length;
 
@@ -335,7 +341,7 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 
 //      Log.d(TAG, "parseAndSendOps: " + Arrays.deepToString(opsArray));
 
-      Utils.syncContacts(opsArray, getContext(), getContext().getResources().getString(R.string.account_type));
+      Utils.syncContacts(opsArray, getContext(), account);
     }
 
     private String getFilenameFromUrl(String url) {
