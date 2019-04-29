@@ -161,4 +161,6 @@ void MainViewController::getAccountList() {}
 void MainViewController::removeAccount(QString accountName) {}
 
 void MainViewController::syncAccount(QString accountName) {}
+
+void MainViewController::showUrl(QString accountName) {}
 #endif

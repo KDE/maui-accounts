@@ -7,16 +7,18 @@ import org.mauikit.accounts 1.0 as Accounts
 
 ApplicationWindow {
     id: home
+    width: 1280
+    height: 720
     visible: true
     header: ToolBar {
         id: menuBar
         width: parent.width
-        height: 64
+        height: Qt.platform.os == "Android" ? 64 : 48
 
         Label {
             id: labelAppName
-            text: stackPages.currentIndex == 0 ? "Accounts" : "Add Account"
-            font.pointSize: 24
+            text: "Accounts"
+            font.pointSize: Qt.platform.os == "Android" ? 24 : 12
             verticalAlignment: Text.AlignVCenter
             anchors.left: parent.left
             anchors.leftMargin: 16
@@ -39,21 +41,30 @@ ApplicationWindow {
         }
     }
     onClosing: {
-        if (swipeView.currentIndex > 0) {
-            close.accepted = false
-            swipeView.setCurrentIndex(swipeView.currentIndex-1)
-        } else if (stackPages.currentIndex > 0) {
-            close.accepted = false
-            stackPages.currentIndex--;
+        if (Qt.platform.os == "Android") {
+            backPressed()
+        } else {
+            close.accepted = true
         }
-    }
-
-    ToastManager {
-        id: toastManager
     }
 
     ListModel {
         id: listmodelAccounts
+    }
+
+    RoundButton {
+        width: Qt.platform.os == "Android" ? 64 : 48
+        height: Qt.platform.os == "Android" ? 64 : 48
+        icon.source: "icons/back.png"
+        z: 100
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 16
+        anchors.right: parent.right
+        anchors.rightMargin: 16
+        visible: stackPages.currentIndex > 0
+        onClicked: {
+            backPressed()
+        }
     }
 
     StackLayout {
@@ -66,7 +77,6 @@ ApplicationWindow {
         anchors.bottomMargin: 0
         anchors.top: menuBar.bottom
         anchors.topMargin: 0
-        currentIndex: 0
 
         Rectangle {
             Layout.fillHeight: true
@@ -197,14 +207,14 @@ ApplicationWindow {
             }
 
             RoundButton {
-                width: 64
-                height: 64
+                width: Qt.platform.os == "Android" ? 64 : 48
+                height: Qt.platform.os == "Android" ? 64 : 48
                 text: "+"
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 16
                 anchors.right: parent.right
                 anchors.rightMargin: 16
-                font.pointSize: 24
+                font.pointSize: Qt.platform.os == "Android" ? 24 : 14
                 font.bold: true
                 onClicked: {
                     stackPages.currentIndex = 1
@@ -328,9 +338,7 @@ ApplicationWindow {
 
     Connections {
         target: Accounts.MainViewController
-        onShowToast: {
-            toastManager.show(message);
-        }
+
         onAccountAdded: {
             stackPages.currentIndex = 0;
             swipeView.setCurrentIndex(0)
@@ -358,6 +366,16 @@ ApplicationWindow {
     Component.onCompleted: {
         Accounts.MainViewController.getAccountList()
     }
+
+    function backPressed() {
+        if (swipeView.currentIndex > 0) {
+            close.accepted = false
+            swipeView.setCurrentIndex(swipeView.currentIndex-1)
+        } else if (stackPages.currentIndex > 0) {
+            close.accepted = false
+            stackPages.currentIndex--;
+        }
+    }
 }
 
 
@@ -529,7 +547,4 @@ ApplicationWindow {
 
 
 
-/*##^## Designer {
-    D{i:0;autoSize:true;height:1280;width:720}
-}
- ##^##*/
+

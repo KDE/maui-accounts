@@ -13,8 +13,10 @@ class SyncManager : public QObject {
  public:
   SyncManager(QString username, QString password, QString url);
 
+#ifdef ANDROID
  public slots:
   void doSyncAndroid();
+#endif
 
  signals:
   void syncComplete();

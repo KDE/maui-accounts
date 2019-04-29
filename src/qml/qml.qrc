@@ -1,11 +1,10 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
-        <file>ToastManager.qml</file>
-        <file>Toast.qml</file>
         <file>icons/delete.png</file>
         <file>icons/refresh.png</file>
         <file>ProgressDialog.qml</file>
         <file>icons/menu.png</file>
+        <file>icons/back.png</file>
     </qresource>
 </RCC>
