@@ -6,5 +6,6 @@
         <file>ProgressDialog.qml</file>
         <file>icons/menu.png</file>
         <file>icons/back.png</file>
+        <file>icons/spinner.gif</file>
     </qresource>
 </RCC>

@@ -48,8 +48,47 @@ ApplicationWindow {
         }
     }
 
+    Popup {
+        id: progressDialog
+        anchors.centerIn: parent
+        width: 600
+        height: 100
+        modal: true
+        focus: true
+        closePolicy: Popup.NoAutoClose
+
+        Rectangle {
+            anchors.right: parent.right
+            anchors.rightMargin: 20
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.leftMargin: 20
+            anchors.left: parent.left
+
+            AnimatedImage {
+                id: spinner
+                height: 50
+                anchors.verticalCenter: parent.verticalCenter
+                fillMode: Image.PreserveAspectFit
+                source: "icons/spinner.gif"
+            }
+
+            Label {
+                id: progressDialogText
+                anchors.left: spinner.right
+                anchors.leftMargin: 20
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+    }
+
     ListModel {
         id: listmodelAccounts
+
+        ListElement {
+            accountName: "anupam - Opendesktop"
+            name: "Opendesktop"
+            username: "ab0027"
+        }
     }
 
     RoundButton {
@@ -180,7 +219,7 @@ ApplicationWindow {
 
                                     Text {
                                         text: name
-                                        font.pointSize: 14
+                                        font.pointSize: Qt.platform.os == "Android" ? 14 : 10
                                         font.bold: true
                                     }
                                     Text {
@@ -360,6 +399,16 @@ ApplicationWindow {
                     username: account[0]
                 })
             }
+        }
+
+        onShowIndefiniteProgress: {
+            progressDialogText.text = message
+            progressDialog.open()
+        }
+
+        onHideIndefiniteProgress: {
+            progressDialogText.text = ""
+            progressDialog.close()
         }
     }
 
