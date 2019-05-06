@@ -4,36 +4,29 @@
 #include "../libccdav/lib/utils/CardDAVReply.hpp"
 #include "../libccdav/lib/utils/NetworkHelper.hpp"
 
-#ifdef ANDROID
-#include <jni.h>
-#include <QtAndroidExtras/QAndroidJniEnvironment>
-#include <QtAndroidExtras/QAndroidJniObject>
-#endif
-
 #include <QDebug>
 #include <QList>
 #include <QUuid>
 #include <QtConcurrent>
 
-SyncManager::SyncManager(QString username, QString password, QString url) {
+SyncManager::SyncManager(QString accountName, QString username,
+                         QString password, QString url) {
   this->m_CardDAV = new CardDAV(url, username, password);
 
   this->url = url;
+  this->accountName = accountName;
+  this->m_localContacts = new LocalContacts(accountName);
 }
 
-#ifdef ANDROID
-void SyncManager::doSyncAndroid() {
+void SyncManager::doSync() {
   qDebug() << "doSync(): ";
 
-  emit syncComplete();
-
-  return;
-
   if (app == nullptr) {
-    int argc = 1;
-    char *argv[] = {"sync"};
+    //    int argc = 1;
+    //    char *argv[] = {"sync"};
 
-    this->app = new QCoreApplication(argc, argv);
+    //    this->app = new QCoreApplication(argc, argv);
+    this->app = new QEventLoop();
   }
 
   bool isError = false;
@@ -61,32 +54,15 @@ void SyncManager::doSyncAndroid() {
 
   qDebug() << "doSync: remoteContacts Length :" << remoteContacts.length();
 
-  QAndroidJniEnvironment env;
-  QAndroidJniObject contactsArrayJniObject =
-      QAndroidJniObject::callStaticObjectMethod(
-          "org/mauikit/accounts/MainActivity", "getContacts",
-          "()[[Ljava/lang/String;");
-  jobjectArray contactsJniArray = contactsArrayJniObject.object<jobjectArray>();
-  int len = env->GetArrayLength(contactsJniArray);
+  QList<LocalContacts::Contact> localContacts = m_localContacts->getContacts();
 
-  qDebug() << "doSync: getContacts Length :" << len;
+  qDebug() << "doSync: getContacts Length :" << localContacts.size();
 
-  for (int i = 0; i < len; i++) {
-    jobjectArray stringArr = static_cast<jobjectArray>(
-        env->GetObjectArrayElement(contactsJniArray, i));
-    jstring e_vCard =
-        static_cast<jstring>(env->GetObjectArrayElement(stringArr, 0));
-    jstring e_cTag =
-        static_cast<jstring>(env->GetObjectArrayElement(stringArr, 1));
-    jstring e_url =
-        static_cast<jstring>(env->GetObjectArrayElement(stringArr, 2));
-    jstring e_rawContactId =
-        static_cast<jstring>(env->GetObjectArrayElement(stringArr, 3));
-
-    const char *vCard = env->GetStringUTFChars(e_vCard, 0);
-    const char *cTag = env->GetStringUTFChars(e_cTag, 0);
-    const char *url = env->GetStringUTFChars(e_url, 0);
-    const char *rawContactId = env->GetStringUTFChars(e_rawContactId, 0);
+  for (LocalContacts::Contact c : localContacts) {
+    QString vCard = c.vCard;
+    QString cTag = c.cTag;
+    QString url = c.url;
+    QString rawContactId = QString(c.rawContactId);
 
     qDebug() << "doSync: Syncing Contact :" << cTag << url << rawContactId
              << vCard;
@@ -98,7 +74,7 @@ void SyncManager::doSyncAndroid() {
     // TODO [ ] : Delete Local Contacts if Remote Deleted
     // TODO [X] : Delete Remote Contacts if Local Deleted
 
-    if (strcmp(url, "") == 0) {
+    if (url == "") {
       // Upload New Contact
 
       qDebug() << "doSync: New Contact";
@@ -161,32 +137,17 @@ void SyncManager::doSyncAndroid() {
             << "doSync: Control should never come here. Something is wrong";
       }
     }
-
-    env->ReleaseStringUTFChars(e_vCard, vCard);
-    env->ReleaseStringUTFChars(e_cTag, cTag);
-    env->ReleaseStringUTFChars(e_url, url);
-    env->ReleaseStringUTFChars(e_rawContactId, rawContactId);
   }
 
-  contactsArrayJniObject = QAndroidJniObject::callStaticObjectMethod(
-      "org/mauikit/accounts/MainActivity", "getDeletedContacts",
-      "()[[Ljava/lang/String;");
+  QList<LocalContacts::Contact> localDeletedContacts =
+      m_localContacts->getDeletedContacts();
 
-  contactsJniArray = contactsArrayJniObject.object<jobjectArray>();
-  len = env->GetArrayLength(contactsJniArray);
+  qDebug() << "doSync: getDeletedContacts Length :"
+           << localDeletedContacts.size();
 
-  qDebug() << "doSync: getDeletedContacts Length :" << len;
-
-  for (int i = 0; i < len; i++) {
-    jobjectArray stringArr = static_cast<jobjectArray>(
-        env->GetObjectArrayElement(contactsJniArray, i));
-    jstring e_url =
-        static_cast<jstring>(env->GetObjectArrayElement(stringArr, 0));
-    jstring e_rawContactId =
-        static_cast<jstring>(env->GetObjectArrayElement(stringArr, 1));
-
-    const char *url = env->GetStringUTFChars(e_url, 0);
-    const char *rawContactId = env->GetStringUTFChars(e_rawContactId, 0);
+  for (LocalContacts::Contact c : localDeletedContacts) {
+    QString url = c.url;
+    QString rawContactId = QString(c.rawContactId);
 
     qDebug() << "doSync: Deleting Contact :" << url << rawContactId;
 
@@ -204,9 +165,6 @@ void SyncManager::doSyncAndroid() {
         remoteContacts.removeOne(c);
       }
     }
-
-    env->ReleaseStringUTFChars(e_url, url);
-    env->ReleaseStringUTFChars(e_rawContactId, rawContactId);
   }
 
   qDebug() << "doSync: Remaining Remote Contacts Length :"
@@ -224,9 +182,8 @@ void SyncManager::doSyncAndroid() {
     }
   }
 
-  this->parseAndSendOps(ops);
+  m_localContacts->syncContacts(ops);
 }
-#endif
 
 void SyncManager::handleNetworkError(QNetworkReply::NetworkError err) {
   qDebug() << err;
@@ -327,37 +284,6 @@ QList<QString> SyncManager::deleteContact(QString rawContactId, QString url) {
 
   return buildOperation(this->SYNC_OPERATION_DELETE, "", "", url, rawContactId);
 }
-
-#ifdef ANDROID
-void SyncManager::parseAndSendOps(QList<QList<QString>> ops) {
-  QAndroidJniEnvironment env;
-  jobjectArray jops = env->NewObjectArray(
-      ops.length(), env->FindClass("[Ljava/lang/String;"), 0);
-  int opCount = 0;
-
-  for (QList<QString> op : ops) {
-    int opElementCount = 0;
-    jobjectArray jop =
-        env->NewObjectArray(op.length(), env->FindClass("java/lang/String"), 0);
-
-    for (QString opStr : op) {
-      const char *str = opStr.toUtf8().toBase64().constData();
-      jstring jstr = env->NewStringUTF(str);
-      env->SetObjectArrayElement(jop, opElementCount, jstr);
-
-      opElementCount++;
-    }
-
-    env->SetObjectArrayElement(jops, opCount, jop);
-
-    opCount++;
-  }
-
-  QAndroidJniObject::callStaticMethod<void>("org/mauikit/accounts/MainActivity",
-                                            "syncContacts",
-                                            "([[Ljava/lang/String;)V", jops);
-}
-#endif
 
 QString SyncManager::getFilenameFromUrl(QString url) {
   return url.mid(url.lastIndexOf("/") + 1);

@@ -7,6 +7,9 @@
 #include <QAndroidJniObject>
 #include <QtAndroidExtras/QAndroidJniEnvironment>
 #include <QtAndroidExtras/QAndroidJniObject>
+#else
+#include <QtConcurrent>
+#include "../entities/SyncManager.hpp"
 #endif
 
 #include <QDebug>
@@ -180,7 +183,7 @@ MainViewController::MainViewController() {
 void MainViewController::writeAccountsJsonObjectToFile() {
   QFile accountJsonFile(accountsJsonFilePath);
 
-  if (!accountJsonFile.open(QIODevice::WriteOnly)) {
+  if (!accountJsonFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     qWarning("Couldn't open config file.");
   }
 
@@ -241,7 +244,36 @@ void MainViewController::removeAccount(QString accountName) {
   getAccountList();
 }
 
-void MainViewController::syncAccount(QString accountName) {}
+void MainViewController::syncAccount(QString accountName) {
+  QJsonArray accountsArray = accountsJsonObject[JSON_FIELD_ACCOUNTS].toArray();
+
+  for (int i = 0; i < accountsArray.size(); i++) {
+    QJsonObject accountObject = accountsArray[i].toObject();
+
+    if (accountObject[JSON_ACCOUNT_ARRAY_FIELD_ACCOUNTNAME].toString() ==
+        accountName) {
+      qDebug() << "Syncing account" << accountName;
+
+      QByteArray password;
+      wallet->readEntry(
+          accountObject[JSON_ACCOUNT_ARRAY_FIELD_USERNAME].toString(),
+          password);
+
+      QtConcurrent::run([=]() {
+        SyncManager *manager = new SyncManager(
+            accountName,
+            accountObject[JSON_ACCOUNT_ARRAY_FIELD_USERNAME].toString(),
+            QString::fromStdString(password.toStdString()),
+            accountObject[JSON_ACCOUNT_ARRAY_FIELD_URL].toString());
+        manager->doSync();
+
+        qDebug() << "Sync Complete";
+      });
+
+      break;
+    }
+  }
+}
 
 void MainViewController::showUrl(QString accountName) {}
 

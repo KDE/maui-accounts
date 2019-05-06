@@ -33,11 +33,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
   src/main.cpp \
   src/entities/SyncManager.cpp \
+  src/entities/LocalContacts.cpp \
   src/viewcontrollers/MainViewController.cpp
 
 HEADERS += \
   src/entities/SyncManager.hpp \
-  src/entities/SyncThread.hpp \
+  src/entities/LocalContacts.hpp \
+  src/entities/Constants.hpp \
   src/viewcontrollers/MainViewController.hpp
 
 RESOURCES += src/qml/qml.qrc

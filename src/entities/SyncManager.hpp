@@ -2,6 +2,7 @@
 #define ENTITIES_SYNCMANAGER_HPP
 
 #include "../libccdav/lib/CardDAV.hpp"
+#include "LocalContacts.hpp"
 
 #include <QCoreApplication>
 #include <QNetworkReply>
@@ -11,12 +12,11 @@
 class SyncManager : public QObject {
   Q_OBJECT
  public:
-  SyncManager(QString username, QString password, QString url);
+  SyncManager(QString accountName, QString username, QString password,
+              QString url);
 
-#ifdef ANDROID
  public slots:
-  void doSyncAndroid();
-#endif
+  void doSync();
 
  signals:
   void syncComplete();
@@ -30,15 +30,17 @@ class SyncManager : public QObject {
   const QString SYNC_OPERATION_DELETE = "sync_op_delete";
 
   CardDAV *m_CardDAV;
-  QCoreApplication *app = nullptr;
+  //  QCoreApplication *app = nullptr;
+  QEventLoop *app;
   QString url;
+  QString accountName;
+  LocalContacts *m_localContacts;
 
   QList<QString> createContact(QString rawContactId, QString vCard);
   QList<QString> updateContact(QString rawContactId, QString cTag,
                                QString vCard, QString url);
   QList<QString> deleteContact(QString rawContactId, QString url);
   void handleNetworkError(QNetworkReply::NetworkError err);
-  void parseAndSendOps(QList<QList<QString>> ops);
   QString getFilenameFromUrl(QString url);
   QString getLastIdFromUrl(QString url);
   QString generateContactUuid(QString vCard);
