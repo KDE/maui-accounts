@@ -2,7 +2,7 @@ QT += quick concurrent svg
 CONFIG += c++11
 
 linux:unix:!android {
-    LIBS += -lKF5Wallet
+    QT += KWallet
 }
 
 android: {

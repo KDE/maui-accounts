@@ -1,7 +1,7 @@
 #ifndef VIEWCONTROLLERS_MAINVIEWCONTROLLER_HPP
 #define VIEWCONTROLLERS_MAINVIEWCONTROLLER_HPP
 
-#include <kwallet.h>
+#include <KWallet>
 #include <QJsonObject>
 #include <QObject>
 
