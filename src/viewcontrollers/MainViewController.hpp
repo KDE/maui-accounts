@@ -1,7 +1,10 @@
 #ifndef VIEWCONTROLLERS_MAINVIEWCONTROLLER_HPP
 #define VIEWCONTROLLERS_MAINVIEWCONTROLLER_HPP
 
+#ifndef ANDROID
 #include <KWallet>
+#endif
+
 #include <QJsonObject>
 #include <QObject>
 

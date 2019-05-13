@@ -1,7 +1,3 @@
-#ifdef ANDROID
-#include "entities/SyncThread.hpp"
-#endif
-
 #include "entities/SyncManager.hpp"
 #include "viewcontrollers/MainViewController.hpp"
 
@@ -31,8 +27,8 @@ Java_org_mauikit_accounts_syncadapter_ContactsSyncAdapter_performSync(
   const char* password_str = env->GetStringUTFChars(password, 0);
   const char* url_str = env->GetStringUTFChars(url, 0);
 
-  SyncManager* syncManager =
-      new SyncManager(username_str, password_str, url_str);
+  //  SyncManager* syncManager =
+  //      new SyncManager(username_str, password_str, url_str);
   //  syncManager->doSyncAndroid();
   //  syncManager->deleteLater();
 
