@@ -334,7 +334,6 @@ void MainViewController::showIndefiniteProgressDialog(QString message,
                                                       bool isCancelable) {}
 
 void MainViewController::hideIndefiniteProgressDialog() {}
-#endif
 
 MainViewController::AccountData::AccountData(QString accountName,
                                              QString protocol, QString url,
@@ -346,3 +345,4 @@ MainViewController::AccountData::AccountData(QString accountName,
   this->username = username;
   this->password = password;
 }
+#endif
