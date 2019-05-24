@@ -1,13 +1,12 @@
 #include "SyncManager.hpp"
-#include "../libccdav/lib/CardDAV.hpp"
-#include "../libccdav/lib/dto/Contact.hpp"
-#include "../libccdav/lib/utils/CardDAVReply.hpp"
-#include "../libccdav/lib/utils/NetworkHelper.hpp"
 
 #include <QDebug>
 #include <QList>
 #include <QUuid>
 #include <QtConcurrent>
+#include <libdavclient/dto/Contact.hpp>
+#include <libdavclient/utils/CardDAVReply.hpp>
+#include <libdavclient/utils/NetworkHelper.hpp>
 
 SyncManager::SyncManager(QString accountName, QString username,
                          QString password, QString url) {

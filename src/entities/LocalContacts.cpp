@@ -19,6 +19,16 @@ LocalContacts::LocalContacts(QString accountName) {
           QStandardPaths::StandardLocation::AppDataLocation) +
       "/contacts-metadata.json";
 
+  QDir appDataFolder(QStandardPaths::writableLocation(
+      QStandardPaths::StandardLocation::AppDataLocation));
+  if (!appDataFolder.exists()) {
+    appDataFolder.mkpath(".");
+  }
+
+  if (!QDir(contactsFolderPath).exists()) {
+    QDir(contactsFolderPath).mkpath(".");
+  }
+
   QFile contactsMetadataJson(contacsMetadataJsonPath);
 
   if (!contactsMetadataJson.exists()) {

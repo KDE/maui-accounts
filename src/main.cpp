@@ -4,17 +4,31 @@
 #ifdef ANDROID
 #include <jni.h>
 #include <QtAndroidExtras/QAndroidJniObject>
-#endif
-
+#else
+#include <KCModule>
+#include <KPluginFactory>
 #include <QEventLoop>
 #include <QGuiApplication>
 #include <QLoggingCategory>
 #include <QQmlApplicationEngine>
 #include <QThread>
 #include <QTimer>
+#endif
 
 const char* uri = "org.mauikit.accounts";
 MainViewController* mainviewcontroller = nullptr;
+
+static QObject* mainviewcontroller_singleton_provider(QQmlEngine* engine,
+                                                      QJSEngine* scriptEngine) {
+  Q_UNUSED(engine)
+  Q_UNUSED(scriptEngine)
+
+  if (mainviewcontroller == nullptr) {
+    mainviewcontroller = new MainViewController();
+  }
+
+  return mainviewcontroller;
+}
 
 #ifdef ANDROID
 extern "C" {
@@ -52,19 +66,6 @@ Java_org_mauikit_accounts_syncadapter_ContactsSyncAdapter_performSync(
   qEventLoop->exec();
 }
 }
-#endif
-
-static QObject* mainviewcontroller_singleton_provider(QQmlEngine* engine,
-                                                      QJSEngine* scriptEngine) {
-  Q_UNUSED(engine)
-  Q_UNUSED(scriptEngine)
-
-  if (mainviewcontroller == nullptr) {
-    mainviewcontroller = new MainViewController();
-  }
-
-  return mainviewcontroller;
-}
 
 int main(int argc, char* argv[]) {
   QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -77,8 +78,6 @@ int main(int argc, char* argv[]) {
 
   app.setApplicationName("Accounts");
   app.setApplicationVersion("0.4.0");
-  //  SyncThread* s = new SyncThread(username_str, password_str, url_str);
-  //  s->start();
   app.setApplicationDisplayName("Accounts");
 
   qmlRegisterSingletonType<MainViewController>(
@@ -86,11 +85,26 @@ int main(int argc, char* argv[]) {
 
   engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
   if (engine.rootObjects().isEmpty()) return -1;
-
-#ifdef ANDROID
   QAndroidJniObject::callStaticMethod<void>("org/mauikit/accounts/MainActivity",
                                             "init");
-#endif
 
   return app.exec();
 }
+#else
+class MauiAccountsKCM : public KCModule {
+  Q_OBJECT
+ public:
+  MauiAccountsKCM(QWidget* parent, const QVariantList& args)
+      : KCModule(parent, args) {
+    qDebug() << "Heyy....";
+  }
+};
+
+K_PLUGIN_FACTORY_WITH_JSON(MauiAccountsKCMFactory, "maui_accounts.json",
+                           registerPlugin<MauiAccountsKCM>();)
+K_EXPORT_PLUGIN(MauiAccountsKCMFactory("maui_accounts" /* kcm name */,
+                                       "maui_accounts" /* catalog name */))
+
+#include "main.moc"
+
+#endif

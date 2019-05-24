@@ -1,13 +1,13 @@
 #ifndef ENTITIES_SYNCMANAGER_HPP
 #define ENTITIES_SYNCMANAGER_HPP
 
-#include "../libccdav/lib/CardDAV.hpp"
 #include "LocalContacts.hpp"
 
 #include <QCoreApplication>
 #include <QNetworkReply>
 #include <QObject>
 #include <QString>
+#include <libdavclient/CardDAV.hpp>
 
 class SyncManager : public QObject {
   Q_OBJECT

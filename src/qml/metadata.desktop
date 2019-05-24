@@ -1,0 +1,20 @@
+[Desktop Entry]
+Name=MAUI Accounts
+Comment=MAUI Accounts
+Encoding=UTF-8
+
+Icon=maui_accounts
+Type=Service
+X-KDE-ServiceTypes=KCModule
+X-KDE-ServiceTypes=Plasma/Generic
+
+X-Plasma-API=declarativeappletscript
+X-Plasma-MainScript=ui/main.qml
+
+X-KDE-PluginInfo-Name=maui_accounts
+X-KDE-PluginInfo-Category=network
+X-KDE-PluginInfo-Author=Anupam Basak
+X-KDE-PluginInfo-Email=anupam.basak27@gmail.com
+X-KDE-PluginInfo-Version=0.1.0
+X-KDE-PluginInfo-Website=
+X-KDE-PluginInfo-License=

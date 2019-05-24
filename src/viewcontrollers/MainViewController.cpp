@@ -156,6 +156,12 @@ void MainViewController::hideIndefiniteProgressDialog() {
 }
 #else
 MainViewController::MainViewController() {
+  QDir appDataFolder(QStandardPaths::writableLocation(
+      QStandardPaths::StandardLocation::AppDataLocation));
+  if (!appDataFolder.exists()) {
+    appDataFolder.mkpath(".");
+  }
+
   accountsJsonFilePath =
       QStandardPaths::writableLocation(
           QStandardPaths::StandardLocation::AppDataLocation) +

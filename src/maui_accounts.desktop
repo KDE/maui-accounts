@@ -1,0 +1,15 @@
+[Desktop Entry]
+Icon=maui_accounts
+Exec=kcmshell5 maui_accounts
+
+Type=Service
+X-KDE-ServiceTypes=KCModule
+X-KDE-Library=maui_accounts
+X-KDE-ParentApp=kcontrol
+X-KDE-System-Settings-Parent-Category=network
+X-KDE-Weight=80
+
+Name=MAUI Accounts
+Comment=MAUI Accounts
+X-KDE-Keywords=network,accounts
+Categories=Qt;KDE;X-KDE-settings-looknfeel;
